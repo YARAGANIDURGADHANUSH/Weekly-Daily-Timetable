@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weekly Daily Timetable</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#5d6773;--bd:#dfe3e8;--ac:#2f6fed}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171b;--card:#1d2127;--tx:#e8ebee;--mu:#9aa4af;--bd:#2d333b;--ac:#6b9bff}}
+:root[data-theme="dark"]{--bg:#14171b;--card:#1d2127;--tx:#e8ebee;--mu:#9aa4af;--bd:#2d333b;--ac:#6b9bff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:21px;margin:0 0 2px}.sub{color:var(--mu);font-size:13px;margin-bottom:10px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.tabs button,.btn{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:16px;padding:6px 14px;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.sum{display:flex;flex-wrap:wrap;gap:6px 14px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px;margin:8px 0;font-size:13px}
+.row{display:flex;gap:10px;background:var(--card);border:1px solid var(--bd);border-left:5px solid var(--c);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.row.now{outline:2px solid var(--ac)}.row.done .n{text-decoration:line-through;color:var(--mu)}
+.t{min-width:92px;font-size:12.5px;color:var(--mu);font-variant-numeric:tabular-nums}
+.n{font-weight:600}.d{font-size:13px;color:var(--mu)}
+.cs{--c:#2f6fed}.code{--c:#8e5bd6}.cloud{--c:#0e9aa7}.lang{--c:#e08a1e}.sop{--c:#c2477a}.ex{--c:#1f9d55}.meal,.rest,.plan{--c:#8a8f98}
+.rest{opacity:.85}
+.leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--mu);margin:6px 0 10px}.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--c);margin-right:4px}
+details{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:13.5px}
+summary{cursor:pointer;font-weight:600}li{margin:4px 0}
+</style></head><body><main>
+<h1>Weekly Daily Timetable</h1>
+<div class="sub">Wake 05:30 · midday sleep 2 h · lights out 23:00 · ticks reset every week</div>
+<div class="tabs" id="tabs"></div>
+<div class="sum" id="sum"></div>
+<div class="leg"><span class="cs"><i></i>CS foundations</span><span class="code"><i></i>Python/Linux/Terraform</span><span class="cloud"><i></i>Cloud/DevSecOps</span><span class="lang"><i></i>Language</span><span class="sop"><i></i>SOP</span><span class="ex"><i></i>Exercise</span><span class="rest"><i></i>Rest/meals</span></div>
+<div id="out"></div>
+<div style="display:flex;gap:8px;margin-top:10px"><button class="btn" id="rst">Reset day</button><button class="btn" id="thm">Toggle theme</button></div>
+<details><summary>Why it is built this way</summary><ul>
+<li><b>Hardest work first.</b> Alertness for analytical thinking peaks in the first 2–5 hours after waking, so proofs and problem solving sit at 07:30–11:45. Hands-on coding follows the nap, and review and language work come in the evening.</li>
+<li><b>Exercise before study.</b> A morning run or walk raises attention for the next few hours. Run 3 days, walk and strength 2 days, one easy rest day. Add about 10% per week.</li>
+<li><b>Nap logic.</b> One sleep cycle is about 90 minutes. The 2-hour slot covers falling asleep, and the 15-minute buffer clears sleep inertia before you code. Night sleep of about 6.5 h plus the nap gives roughly 8 h.</li>
+<li><b>Retrieval and spacing.</b> The nightly review and Sunday review use recall and an error log. Recalling and redoing missed problems beats re-reading.</li>
+<li><b>Interleaving.</b> Discrete Math and Probability alternate by day, so you practise choosing the method rather than only repeating one. In Month 1 replace Probability with Discrete Math.</li>
+<li><b>Short, daily language.</b> Frequent short exposures beat one long weekly session.</li>
+<li><b>Real rest.</b> Breaks, free time and a screen-free wind-down protect memory consolidation. Without them the schedule fails by week 3.</li>
+<li><b>Swap subjects with the dashboard.</b> Blocks A/B follow the current month: Months 4–6 use Linear Algebra, Theory of Computation and Networks; Months 7–9 use Crypto, OS and Distributed Systems.</li></ul></details>
+</main>
+<script>
+const Tm=s=>{const[h,m]=s.split(":");return +h*60+ +m};
+const b=(s,e,t,n,d)=>({s,e,t,n,d});
+const EX=["Run: easy run-walk intervals (1 min run / 2 min walk × 10; add 1 min of running each week)","Brisk walk 45 min + 15 min bodyweight strength (squats, push-ups, plank)","Run: easy, conversational pace, 30–40 min","Brisk walk 45 min + 15 min bodyweight strength","Run: easy pace with 4–6 × 1 min faster pickups"];
+const A=["Discrete Math","Probability","Discrete Math","Probability","Mixed problem set (Discrete + Probability)"];
+const B=["Algorithms &amp; DS","Algorithms &amp; DS","Algorithms &amp; DS","Algorithms &amp; DS","Algorithms proofs + write-up"];
+const C=["Terraform/IaC lab: secure network + IAM","Containers &amp; Kubernetes security","CI/CD + DevSecOps scanning (SAST, SCA, secrets)","IAM, threat modeling, zero trust","Explain-aloud: architecture whiteboard + mock interview questions"];
+const L=[["German","Duolingo lesson + 10 new words + write 5 sentences"],["English / IELTS","SpellIELTS practice + 10 min listen and shadow"],["German","Duolingo + listen 10 min + speak aloud 5 sentences"],["English / IELTS","SpellIELTS + write one short paragraph"],["German","Duolingo + short writing (5–6 lines)"]];
+const S=["Brainstorm: your story, motivation, career goals","Research your 3 target programs and note fit","Draft section 1 (background and motivation)","Draft section 2 (why this program + goals)","Edit the draft; paste it to Claude for feedback"];
+const common=(i)=>[
+b("05:30","05:45","rest","Wake-up routine","Water, daylight, 5 min mobility. No phone for the first 30 min."),
+b("05:45","06:45","ex","Exercise",EX[i]),
+b("06:45","07:30","meal","Shower + breakfast","Protein and carbs. Read today's plan (2 min)."),
+b("07:30","09:30","cs","CS Block A: "+A[i],"Peak focus. 5 min recall of yesterday, 20 min learn, the rest on problems. Write full proofs."),
+b("09:30","09:45","rest","Break","Walk, water, no phone."),
+b("09:45","11:45","cs","CS Block B: "+B[i],"Same format. Work in 50 min focus / 10 min rest cycles."),
+b("11:45","12:30","meal","Lunch + 10 min German flashcards","Light lunch (heavy meals deepen the dip)."),
+b("12:30","14:30","rest","Midday sleep (2 h)","Lights out. Aim for about 90 min asleep; alarm at 14:30."),
+b("14:30","14:45","rest","Wake buffer","Cold water on face, daylight, short walk."),
+b("14:45","15:45","code","Python (Bro Code)","Code along, then redo the exercise from memory. Finish with one mini task."),
+b("15:45","16:00","rest","Break","Stretch, snack."),
+b("16:00","17:00","code","Linux (Bro Code)","Type every command yourself. Keep a personal cheat-sheet."),
+b("17:00","17:15","rest","Break","Walk outside."),
+b("17:15","18:15","code","Terraform","Madhukar Reddy video + official docs. Plan, apply, destroy a small config, commit to Git."),
+b("18:15","19:00","meal","Dinner + 15 min walk","Walking helps digestion and clears the head."),
+b("19:00","19:45","rest","Free time","Family, hobby, no study."),
+b("19:45","20:45","cloud","Cloud/DevSecOps: "+C[i],"Hands-on lab or rehearse concepts aloud: explain it, then check against docs."),
+b("20:45","21:15","lang",L[i][0],L[i][1]),
+b("21:15","21:45","sop","SOP (Statement of Purpose)",S[i]),
+b("21:45","22:15","cs","CS review + error log","Redo 2 missed problems, quick flashcards, write tomorrow's top 3 tasks."),
+b("22:15","22:30","rest","Prep for tomorrow","Bag, clothes, desk."),
+b("22:30","23:00","rest","Wind-down","Screens off, dim lights, stretch, paper book. Lights out 23:00.")];
+const sat=[
+b("05:30","05:45","rest","Wake-up routine","Water, daylight, mobility."),
+b("05:45","07:00","ex","Long walk or long easy run","60–75 min at conversational pace."),
+b("07:00","07:45","meal","Shower + breakfast",""),
+b("07:45","09:45","cs","CS: timed mixed set (closed-book)","Exam simulation: 2 h, unfamiliar problems across topics."),
+b("09:45","10:00","rest","Break","Walk."),
+b("10:00","12:00","cs","CS: mark + error analysis + redo","Mark yourself, log each mistake with cause (concept, sloppy step, time), redo."),
+b("12:00","12:30","meal","Lunch",""),
+b("12:30","14:30","rest","Midday sleep (2 h)","Alarm 14:30."),
+b("14:30","14:45","rest","Wake buffer",""),
+b("14:45","16:45","cs","CS: proof writing + extra problems","Algorithms or the month's subject; write full solutions."),
+b("16:45","17:00","rest","Break",""),
+b("17:00","18:30","cloud","Project lab: Python + Linux + Terraform","One small project that ties all three together, e.g. a script that provisions and tears down infrastructure."),
+b("18:30","19:15","meal","Dinner + walk",""),
+b("19:15","20:00","rest","Free time",""),
+b("20:00","20:45","lang","German + English / IELTS","20 min each. One speaking or writing task."),
+b("20:45","21:45","sop","SOP drafting (1 h)","Longer session: write a full draft section."),
+b("21:45","22:30","rest","Free evening","Relax, no study."),
+b("22:30","23:00","rest","Wind-down","Screens off. Lights out 23:00.")];
+const sun=[
+b("05:30","05:45","rest","Wake-up routine",""),
+b("05:45","06:30","ex","Rest day: easy walk + stretching","30 min easy walk, 15 min yoga or stretching."),
+b("06:30","07:30","meal","Shower + breakfast","Slow start."),
+b("07:30","09:30","cs","CS: weekly spaced review","Recall every subject from the week without notes. Update the error log."),
+b("09:30","09:45","rest","Break",""),
+b("09:45","11:15","cs","CS: catch-up + next-week preview","Finish unfinished topics, skim next week's lectures."),
+b("11:15","11:45","plan","Plan next week","Set weekly goals, update the dashboard."),
+b("11:45","12:30","meal","Lunch",""),
+b("12:30","14:30","rest","Midday sleep (2 h)","Alarm 14:30."),
+b("14:30","14:45","rest","Wake buffer",""),
+b("14:45","16:45","code","Catch-up: Python / Linux / Terraform","Finish missed lessons or extend the Saturday project."),
+b("16:45","19:00","rest","Free time / outdoors / social",""),
+b("19:00","19:45","meal","Dinner",""),
+b("19:45","20:15","lang","German / English","Light practice and streak."),
+b("20:15","21:15","sop","SOP edit (1 h)","Revise the week's drafts."),
+b("21:15","22:30","rest","Free evening",""),
+b("22:30","23:00","rest","Wind-down","Screens off. Lights out 23:00.")];
+const days=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const D=[0,1,2,3,4].map(common).concat([sat,sun]);
+const g=new Date().getDay(),today=(g+6)%7;let cur=today;
+const mon=new Date();mon.setDate(mon.getDate()-((mon.getDay()+6)%7));const stamp=mon.toDateString();
+let st={};try{st=JSON.parse(localStorage.getItem("tt-v1")||"{}");if(st._w!==stamp)st={_w:stamp}}catch(e){st={_w:stamp}}
+const save=()=>{try{localStorage.setItem("tt-v1",JSON.stringify(st))}catch(e){}};
+const hrs=(bl,ts)=>bl.filter(x=>ts.includes(x.t)).reduce((a,x)=>a+Tm(x.e)-Tm(x.s),0)/60;
+function render(){
+const bl=D[cur],now=new Date(),nm=now.getHours()*60+now.getMinutes();
+document.getElementById("tabs").innerHTML=days.map((d,i)=>`<button class="${i==cur?"on":""}" data-d="${i}">${d}${i==today?" •":""}</button>`).join("");
+const cs=hrs(bl,["cs"]),sk=hrs(bl,["code","cloud"]),lg=hrs(bl,["lang"]),sp=hrs(bl,["sop"]),ex=hrs(bl,["ex"]);
+document.getElementById("sum").innerHTML=`<span><b>CS:</b> ${cs.toFixed(1)} h</span><span><b>Skills:</b> ${sk.toFixed(1)} h</span><span><b>Language:</b> ${lg.toFixed(1)} h</span><span><b>SOP:</b> ${sp.toFixed(1)} h</span><span><b>Exercise:</b> ${ex.toFixed(1)} h</span><span><b>Total study:</b> ${(cs+sk+lg+sp).toFixed(1)} h</span>`;
+document.getElementById("out").innerHTML=bl.map((x,j)=>{const k=cur+"-"+j,isNow=cur==today&&nm>=Tm(x.s)&&nm<Tm(x.e);
+return `<div class="row ${x.t} ${st[k]?"done":""} ${isNow?"now":""}"><input type="checkbox" data-k="${k}" ${st[k]?"checked":""}><div class="t">${x.s}–${x.e}</div><div><div class="n">${x.n}${isNow?" · NOW":""}</div>${x.d?`<div class="d">${x.d}</div>`:""}</div></div>`}).join("")}
+document.addEventListener("click",e=>{const d=e.target.closest("[data-d]");if(d){cur=+d.dataset.d;render()}
+if(e.target.id=="rst"){D[cur].forEach((_,j)=>delete st[cur+"-"+j]);save();render()}
+if(e.target.id=="thm"){const r=document.documentElement;const dk=r.dataset.theme?r.dataset.theme=="dark":matchMedia("(prefers-color-scheme:dark)").matches;r.dataset.theme=dk?"light":"dark"}});
+document.addEventListener("change",e=>{if(e.target.dataset.k){st[e.target.dataset.k]=e.target.checked;save();render()}});
+render();setInterval(render,60000);
+</script></body></html>
